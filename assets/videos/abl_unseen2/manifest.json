@@ -1,0 +1,86 @@
+{
+ "settings": [
+  [
+   "sw",
+   "10 s \u00b7 no retrieval"
+  ],
+  [
+   "sw10",
+   "10 s \u00b7 10-chunk window"
+  ],
+  [
+   "v3",
+   "10 s \u00b7 top-K, no bank"
+  ],
+  [
+   "seg",
+   "100 s \u00b7 per-segment + bank"
+  ],
+  [
+   "v3100",
+   "100 s \u00b7 top-K + bank"
+  ],
+  [
+   "ord",
+   "100 s \u00b7 ordered bank"
+  ],
+  [
+   "m199",
+   "200 s \u00b7 top-K + bank"
+  ],
+  [
+   "m399",
+   "400 s \u00b7 top-K + bank"
+  ]
+ ],
+ "items": [
+  {
+   "id": "u3",
+   "times": [
+    9.5
+   ],
+   "labels": [
+    "return to the starting pose"
+   ]
+  },
+  {
+   "id": "u1",
+   "times": [
+    38.0,
+    4.0,
+    41.5
+   ],
+   "labels": [
+    "return to the starting pose",
+    "mid-path pose, first sighting",
+    "mid-path pose, return"
+   ]
+  },
+  {
+   "id": "u2",
+   "times": [
+    27.5,
+    2.75,
+    37.25
+   ],
+   "labels": [
+    "return to the starting pose",
+    "mid-path pose, first sighting",
+    "mid-path pose, return"
+   ]
+  },
+  {
+   "id": "u0",
+   "times": [
+    52.0,
+    2.0,
+    24.25
+   ],
+   "labels": [
+    "return to the starting pose",
+    "mid-path pose, first sighting",
+    "mid-path pose, return"
+   ]
+  }
+ ]
+}

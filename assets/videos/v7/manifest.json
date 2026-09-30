@@ -1,0 +1,60 @@
+[
+ {
+  "case": 17,
+  "times": [
+   59.75,
+   6.0,
+   47.5
+  ],
+  "labels": [
+   "return to the starting pose",
+   "mid-path pose, first sighting",
+   "mid-path pose, return"
+  ],
+  "label": "Suburb corner"
+ },
+ {
+  "case": 6,
+  "times": [
+   39.25,
+   9.5,
+   56.0,
+   27.5
+  ],
+  "labels": [
+   "return to the starting pose",
+   "mid-path pose, first sighting",
+   "mid-path pose, return",
+   "return to the starting pose (near)"
+  ],
+  "label": "Residential road"
+ },
+ {
+  "case": 0,
+  "times": [
+   46.25,
+   12.0,
+   51.0
+  ],
+  "labels": [
+   "return to the starting pose",
+   "mid-path pose, first sighting",
+   "mid-path pose, return"
+  ],
+  "label": "Tree-lined avenue"
+ },
+ {
+  "case": 1,
+  "times": [
+   28.5,
+   14.5,
+   50.75
+  ],
+  "labels": [
+   "return to the starting pose",
+   "mid-path pose, first sighting",
+   "mid-path pose, return"
+  ],
+  "label": "Residential street"
+ }
+]

@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memorizon: Training World Models Beyond Their Context Window</title>
+<meta name="description" content="Memorizon trains streaming world models on long video spans at bounded cost, by scoring only the last few chunks of a sample and supplying history through a shared, retrieval-bounded memory bank.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Arsenal:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="style.css?v=1790775776">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1 class="title">Memorizon: Training World Models Beyond Their Context Window</h1>
+    <div class="authors">
+      <a href="https://tingtingliao.github.io/" target="_blank" rel="noopener">Tingting Liao</a>
+      <span>Xuezhi Liang</span>
+      <a href="https://www.hao-li.com/Hao_Li/Hao_Li_-_about_me.html" target="_blank" rel="noopener">Hao Li</a>
+      <a href="https://guangyiliu.com/" target="_blank" rel="noopener">Guangyi Liu</a>
+    </div>
+    <div class="affil">Institute of Foundation Models (IFM), MBZUAI</div>
+    <div class="linkrow">
+      <span class="linkbtn soon" title="Coming soon"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.8423 0a1.0037 1.0037 0 0 0-.922.6078c-.1536.3687-.0438.6275.2938 1.1113l6.9185 8.3597-1.0223 1.1058a1.0393 1.0393 0 0 0 .003 1.4229l1.2292 1.3135-5.4391 6.4444c-.2803.299-.4538.823-.2971 1.1986a1.0253 1.0253 0 0 0 .9585.635.9133.9133 0 0 0 .6891-.3405l5.783-6.126 7.4902 8.0051a.8527.8527 0 0 0 .6835.2597.9575.9575 0 0 0 .8777-.6138c.1577-.377-.017-.7502-.306-1.1407l-7.0518-8.3418 1.0632-1.13a.9626.9626 0 0 0 .0089-1.3165L4.6336.4639s-.3733-.4535-.768-.463zm0 .272h.0166c.2179.0052.4874.2715.5644.3639l.005.006.0052.0055 10.169 10.9905a.6915.6915 0 0 1-.0072.945l-1.0666 1.133-1.4982-1.7724-8.5994-10.39c-.3286-.472-.352-.6183-.2592-.841a.7307.7307 0 0 1 .6704-.4401Zm14.341 1.5701a.877.877 0 0 0-.6554.2418l-5.6962 6.1584 1.6944 1.8319 5.3089-6.5138c.3251-.4335.479-.6603.3247-1.0292a1.1205 1.1205 0 0 0-.9763-.689zm-7.6557 12.2823 1.3186 1.4135-5.7864 6.1295a.6494.6494 0 0 1-.4959.26.7516.7516 0 0 1-.706-.4669c-.1119-.2682.0359-.6864.2442-.9083l.0051-.0055.0047-.0055z"/></svg>arXiv<em>soon</em></span>
+      <a class="linkbtn" href="https://github.com/TingtingLiao/memorizon" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>Code</a>
+      <a class="linkbtn" href="https://huggingface.co/Luffuly/memorizon" target="_blank" rel="noopener"><svg class="hf-logo" width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="11" r="9.6" fill="#FFD21E"/><path d="M3.2 11a8.8 8.8 0 0 1 17.6 0" fill="none" stroke="#FF9D0B" stroke-width=".9" opacity=".7"/><circle cx="8.4" cy="8.9" r="1.35" fill="#3A3B45"/><circle cx="15.6" cy="8.9" r="1.35" fill="#3A3B45"/><path d="M7.6 12.4c.9 2.3 2.4 3.4 4.4 3.4s3.5-1.1 4.4-3.4c-1.4.5-2.9.8-4.4.8s-3-.3-4.4-.8z" fill="#3A3B45"/><path d="M10.2 15.1c.5.5 1.1.7 1.8.7s1.3-.2 1.8-.7c-.5-.4-1.1-.6-1.8-.6s-1.3.2-1.8.6z" fill="#F94040"/><ellipse cx="4.6" cy="17.6" rx="3" ry="2.3" fill="#FF9D0B" transform="rotate(-25 4.6 17.6)"/><ellipse cx="19.4" cy="17.6" rx="3" ry="2.3" fill="#FF9D0B" transform="rotate(25 19.4 17.6)"/></svg>Weights</a>
+    </div>
+    <div class="tldr">
+      <span class="tldr-tag">TL;DR</span>
+      <p>Long spans for <b>supervision</b>, not for <b>attention</b>. Memorizon trains on minutes-long spans that contain <b>both visits</b> to a place, while each chunk attends only to a <b>small bank of retrieved frames</b>, so the cost stays bounded.</p>
+    </div>
+  </div>
+</header>
+
+<section id="revisit" class="hero-revisit" hidden>
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="sota-title">Revisit Consistency</h2>
+    </div>
+    <div class="rv">
+      <div class="gnav rv-nav">
+        <button class="prev" title="Previous example">&lsaquo; Prev</button>
+        <span class="count">1 / 1</span>
+        <button class="next" title="Next example">Next &rsaquo;</button>
+      </div>
+      <div class="rv-stage"></div>
+    </div>
+  </div>
+</section>
+
+<section id="insight">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="sota-title">Training Long Span at Bounded Cost</h2>
+    </div>
+    <div class="insight-pair">
+    <div class="insight">
+      <div class="fig">
+        <svg id="fig1a" viewBox="0 0 680 262" role="img" aria-label="Figure 1(a): ordinary training sees only a short tail of the episode; Memorizon samples a long span, scores only its last k chunks and supplies the history through a bank of per-chunk top-K retrieved latents.">
+          <!-- episode -->
+          <g data-s="1">
+            <text class="lbl mk" x="130" y="22" text-anchor="middle">first visit</text>
+            <text class="lbl mk" x="660" y="22" text-anchor="end">the camera returns</text>
+            <line class="mkl" x1="130" y1="26" x2="130" y2="34"/><line class="mkl" x1="580" y1="26" x2="580" y2="34"/>
+            <rect class="hist" x="10" y="34" width="650" height="26" rx="3"/>
+            <text class="lbl" x="355" y="51" text-anchor="middle">one episode</text>
+            <circle class="mkd" cx="130" cy="47" r="5"/><circle class="mkd" cx="580" cy="47" r="5"/>
+          </g>
+          <!-- ordinary training -->
+          <g data-s="2">
+            <text class="lbl" x="472" y="96" text-anchor="end">ordinary training</text>
+            <rect class="an" data-part="A" x="482" y="84" width="26" height="22" rx="2"/><text class="tok anT" x="495" y="99" text-anchor="middle"><tspan class="mi">A</tspan></text>
+            <g data-part="T"><rect class="tg" x="514" y="84" width="146" height="22" rx="2"/>
+              <line class="tgl" x1="563" y1="84" x2="563" y2="106"/><line class="tgl" x1="611" y1="84" x2="611" y2="106"/>
+              <text class="tok tgT" x="538" y="99" text-anchor="middle"><tspan class="mi">T</tspan><tspan class="mn sub" dy="3">1</tspan></text><text class="tok tgT" x="587" y="99" text-anchor="middle"><tspan class="mn">⋯</tspan></text><text class="tok tgT" x="636" y="99" text-anchor="middle"><tspan class="mi">T</tspan><tspan class="mi sub" dy="3">k</tspan></text></g>
+            <line class="win" x1="478" y1="64" x2="478" y2="112"/>
+            <text class="lbl miss" x="130" y="99" text-anchor="middle">✗ first visit is outside the window</text>
+          </g>
+          <!-- sampled long span -->
+          <g data-s="3">
+            <text class="lbl" x="10" y="130">sampled training span</text>
+            <rect class="an" x="12" y="136" width="26" height="22" rx="2"/><text class="tok anT" x="25" y="151" text-anchor="middle"><tspan class="mi">A</tspan></text>
+            <rect class="hist" x="44" y="136" width="416" height="22" rx="3"/><text class="lbl" x="252" y="151" text-anchor="middle">history (not tokenised)</text>
+            <rect class="re" x="466" y="136" width="44" height="22" rx="2"/><text class="tok reT" x="488" y="151" text-anchor="middle"><tspan class="cal">R</tspan></text>
+            <g class="tgHL"><rect class="tg" x="514" y="136" width="146" height="22" rx="2"/>
+              <line class="tgl" x1="563" y1="136" x2="563" y2="158"/><line class="tgl" x1="611" y1="136" x2="611" y2="158"/>
+              <text class="tok tgT" x="538" y="151" text-anchor="middle"><tspan class="mi">T</tspan><tspan class="mn sub" dy="3">1</tspan></text><text class="tok tgT" x="587" y="151" text-anchor="middle"><tspan class="mn">⋯</tspan></text><text class="tok tgT" x="636" y="151" text-anchor="middle"><tspan class="mi">T</tspan><tspan class="mi sub" dy="3">k</tspan></text></g>
+          </g>
+          <!-- per-chunk top-K retrieval -->
+          <g data-s="4">
+            <g class="ret"><path d="M538 136 C 518 118, 100 119, 76 140"/><path d="M587 136 C 567 118, 148 119, 124 140"/><path d="M636 136 C 616 118, 192 119, 168 140"/><path d="M538 136 C 518 118, 360 119, 336 140"/><path d="M587 136 C 567 118, 404 119, 380 140"/><path d="M636 136 C 616 118, 450 119, 426 140"/></g>
+            <g class="bk"><rect x="70" y="141" width="12" height="12" rx="2"/><rect x="118" y="141" width="12" height="12" rx="2"/><rect x="162" y="141" width="12" height="12" rx="2"/><rect x="330" y="141" width="12" height="12" rx="2"/><rect x="374" y="141" width="12" height="12" rx="2"/><rect x="420" y="141" width="12" height="12" rx="2"/></g>
+            <path class="brace" d="M44 164 q0 6 6 6 h196 q6 0 6 6 q0 -6 6 -6 h196 q6 0 6 -6"/>
+            <text class="lbl bkT" x="252" y="190" text-anchor="middle">union of per-chunk top-<tspan class="mi">K</tspan> → shared bank</text>
+          </g>
+          <!-- model input: A | B | R | T -->
+          <g data-s="5">
+            <text class="lbl" x="296" y="226" text-anchor="end">model input</text>
+            <g data-part="A"><rect class="an" x="304" y="212" width="26" height="22" rx="2"/><text class="tok anT" x="317" y="227" text-anchor="middle"><tspan class="mi">A</tspan></text></g>
+            <g data-part="B"><rect class="ba" x="336" y="212" width="124" height="22" rx="2"/><text class="tok baT" x="398" y="227" text-anchor="middle"><tspan class="cal">B</tspan></text></g>
+            <g data-part="R"><rect class="re" x="466" y="212" width="44" height="22" rx="2"/><text class="tok reT" x="488" y="227" text-anchor="middle"><tspan class="cal">R</tspan></text></g>
+            <g data-part="T"><rect class="tg" x="514" y="212" width="146" height="22" rx="2"/>
+              <line class="tgl" x1="563" y1="212" x2="563" y2="234"/><line class="tgl" x1="611" y1="212" x2="611" y2="234"/>
+              <text class="tok tgT" x="538" y="227" text-anchor="middle"><tspan class="mi">T</tspan><tspan class="mn sub" dy="3">1</tspan></text><text class="tok tgT" x="587" y="227" text-anchor="middle"><tspan class="mn">⋯</tspan></text><text class="tok tgT" x="636" y="227" text-anchor="middle"><tspan class="mi">T</tspan><tspan class="mi sub" dy="3">k</tspan></text></g>
+            <text class="lbl tgT loss" x="587" y="252" text-anchor="middle">loss on <tspan class="cal">T</tspan>&#160;only</text>
+          </g>
+        </svg>
+        <div class="fig-ctl">
+          <button class="fig-play" aria-label="Pause animation">❚❚</button>
+          <span class="fig-dots"></span>
+          <span class="fig-legend"><i class="an"></i><span class="mi">A</span>&nbsp;first frame <i class="ba"></i><span class="cal">B</span>&nbsp;bank <i class="re"></i><span class="cal">R</span>&nbsp;recent <i class="tg"></i><span class="cal">T</span>&nbsp;target chunks</span>
+        </div>
+      </div>
+      <ol class="insight-text">
+        <li data-for="1 2">A place is often revisited minutes later, but ordinary clip training only sees a short tail of the episode, so no sample ever contains both visits.</li>
+        <li data-for="3">Memorizon samples a <b>long span</b> that holds both visits, yet computes the loss only on its <b>last <span class="mi">k</span> chunks</b>.</li>
+        <li data-for="4 5 6 7 8">Each scored chunk retrieves its own <b>top-<span class="mi">K</span></b> latents by camera co-visibility; their union forms one <b>shared bank</b>, so the model reads <span class="mi">A</span>&thinsp;|&thinsp;<span class="cal">B</span>&thinsp;|&thinsp;<span class="cal">R</span>&thinsp;|&thinsp;<span class="cal">T</span>&nbsp; and the sequence stays bounded however long the span is.</li>
+      </ol>
+    </div>
+    <div class="insight insight-b">
+      <div class="fig">
+          <svg id="fig1b" viewBox="0 0 680 290" role="img" aria-label="Figure 1(b): bank size against training span. The bank levels off at every K while the candidate pool grows.">
+          <defs><clipPath id="f1b-clip"><rect class="f1b-reveal" x="70" y="0" width="580" height="290"/></clipPath></defs>
+          <rect class="f1b-beyond" x="416.8" y="24" width="233.2" height="212"/>
+          <text class="f1b-note" x="533.4" y="40" text-anchor="middle">beyond 100 s</text>
+          <line class="f1b-grid" x1="70" x2="650" y1="211.1" y2="211.1"/><text class="f1b-tick" x="62" y="215.1" text-anchor="end">10</text>
+          <line class="f1b-grid" x1="70" x2="650" y1="137.2" y2="137.2"/><text class="f1b-tick" x="62" y="141.2" text-anchor="end">100</text>
+          <line class="f1b-grid" x1="70" x2="650" y1="63.3" y2="63.3"/><text class="f1b-tick" x="62" y="67.3" text-anchor="end">1000</text>
+          <line class="f1b-grid" x1="119.7" x2="119.7" y1="24" y2="236"/><text class="f1b-tick" x="119.7" y="251" text-anchor="middle">41</text><text class="f1b-sec" x="119.7" y="264" text-anchor="middle">10 s</text>
+          <line class="f1b-grid" x1="237.2" x2="237.2" y1="24" y2="236"/><text class="f1b-tick" x="237.2" y="251" text-anchor="middle">101</text><text class="f1b-sec" x="237.2" y="264" text-anchor="middle">25 s</text>
+          <line class="f1b-grid" x1="326.8" x2="326.8" y1="24" y2="236"/><text class="f1b-tick" x="326.8" y="251" text-anchor="middle">201</text><text class="f1b-sec" x="326.8" y="264" text-anchor="middle">50 s</text>
+          <line class="f1b-grid" x1="416.8" x2="416.8" y1="24" y2="236"/><text class="f1b-tick" x="416.8" y="251" text-anchor="middle">401</text><text class="f1b-sec" x="416.8" y="264" text-anchor="middle">100 s</text>
+          <line class="f1b-grid" x1="507.0" x2="507.0" y1="24" y2="236"/><text class="f1b-tick" x="507.0" y="251" text-anchor="middle">801</text><text class="f1b-sec" x="507.0" y="264" text-anchor="middle">200 s</text>
+          <line class="f1b-grid" x1="597.2" x2="597.2" y1="24" y2="236"/><text class="f1b-tick" x="597.2" y="251" text-anchor="middle">1601</text><text class="f1b-sec" x="597.2" y="264" text-anchor="middle">400 s</text>
+          <rect class="f1b-axis" x="70" y="24" width="580" height="212"/>
+          <text class="f1b-lab" x="360.0" y="282" text-anchor="middle">training span (latent frames)</text>
+          <text class="f1b-lab" transform="translate(20 130.0) rotate(-90)" text-anchor="middle">bank size |<tspan class="cal">B</tspan>|</text>
+          <text class="f1b-note" x="119.7" y="229.7" text-anchor="middle">bank empty</text>
+          <g clip-path="url(#f1b-clip)">
+          <polyline class="f1b-pool" points="208.4,170.0 237.2,155.8 326.8,122.9 416.8,96.4 507.0,72.3 597.2,49.1"/>
+          <text class="f1b-poolT" x="288.7" y="116.2" text-anchor="middle" transform="rotate(-24 288.7 116.2)">candidate pool</text>
+          <polyline class="f1b-k" data-k="2" points="208.4,224.9 237.2,220.3 326.8,211.1 416.8,206.3 507.0,204.4 597.2,203.4" style="stroke:#E69F00;stroke-width:1.6"/>
+          <circle cx="208.4" cy="224.9" r="2" style="fill:#E69F00"/>
+          <circle cx="237.2" cy="220.3" r="2" style="fill:#E69F00"/>
+          <circle cx="326.8" cy="211.1" r="2" style="fill:#E69F00"/>
+          <circle cx="416.8" cy="206.3" r="2" style="fill:#E69F00"/>
+          <circle cx="507.0" cy="204.4" r="2" style="fill:#E69F00"/>
+          <circle cx="597.2" cy="203.4" r="2" style="fill:#E69F00"/>
+          <polyline class="f1b-k" data-k="4" points="208.4,208.3 237.2,203.2 326.8,191.7 416.8,186.8 507.0,185.3 597.2,185.5" style="stroke:#56B4E9;stroke-width:1.6"/>
+          <circle cx="208.4" cy="208.3" r="2" style="fill:#56B4E9"/>
+          <circle cx="237.2" cy="203.2" r="2" style="fill:#56B4E9"/>
+          <circle cx="326.8" cy="191.7" r="2" style="fill:#56B4E9"/>
+          <circle cx="416.8" cy="186.8" r="2" style="fill:#56B4E9"/>
+          <circle cx="507.0" cy="185.3" r="2" style="fill:#56B4E9"/>
+          <circle cx="597.2" cy="185.5" r="2" style="fill:#56B4E9"/>
+          <polyline class="f1b-k" data-k="6" points="208.4,199.8 237.2,193.1 326.8,184.5 416.8,178.1 507.0,175.1 597.2,174.3" style="stroke:#009E73;stroke-width:2.6"/>
+          <circle cx="208.4" cy="199.8" r="2.6" style="fill:#009E73"/>
+          <circle cx="237.2" cy="193.1" r="2.6" style="fill:#009E73"/>
+          <circle cx="326.8" cy="184.5" r="2.6" style="fill:#009E73"/>
+          <circle cx="416.8" cy="178.1" r="2.6" style="fill:#009E73"/>
+          <circle cx="507.0" cy="175.1" r="2.6" style="fill:#009E73"/>
+          <circle cx="597.2" cy="174.3" r="2.6" style="fill:#009E73"/>
+          <polyline class="f1b-k" data-k="8" points="208.4,192.4 237.2,190.1 326.8,178.4 416.8,171.1 507.0,168.4 597.2,166.9" style="stroke:#CC79A7;stroke-width:1.6"/>
+          <circle cx="208.4" cy="192.4" r="2" style="fill:#CC79A7"/>
+          <circle cx="237.2" cy="190.1" r="2" style="fill:#CC79A7"/>
+          <circle cx="326.8" cy="178.4" r="2" style="fill:#CC79A7"/>
+          <circle cx="416.8" cy="171.1" r="2" style="fill:#CC79A7"/>
+          <circle cx="507.0" cy="168.4" r="2" style="fill:#CC79A7"/>
+          <circle cx="597.2" cy="166.9" r="2" style="fill:#CC79A7"/>
+          <polyline class="f1b-k" data-k="10" points="208.4,190.0 237.2,184.1 326.8,171.9 416.8,166.4 507.0,162.5 597.2,161.9" style="stroke:#0072B2;stroke-width:1.6"/>
+          <circle cx="208.4" cy="190.0" r="2" style="fill:#0072B2"/>
+          <circle cx="237.2" cy="184.1" r="2" style="fill:#0072B2"/>
+          <circle cx="326.8" cy="171.9" r="2" style="fill:#0072B2"/>
+          <circle cx="416.8" cy="166.4" r="2" style="fill:#0072B2"/>
+          <circle cx="507.0" cy="162.5" r="2" style="fill:#0072B2"/>
+          <circle cx="597.2" cy="161.9" r="2" style="fill:#0072B2"/>
+          </g>
+          <g class="f1b-legend">
+          <line x1="82" x2="98" y1="38" y2="38" style="stroke:#E69F00;stroke-width:1.8"/><text x="103" y="42"><tspan class="mi">K</tspan> = 2</text>
+          <line x1="144" x2="160" y1="38" y2="38" style="stroke:#56B4E9;stroke-width:1.8"/><text x="165" y="42"><tspan class="mi">K</tspan> = 4</text>
+          <line x1="206" x2="222" y1="38" y2="38" style="stroke:#009E73;stroke-width:2.6"/><text x="227" y="42"><tspan class="mi">K</tspan> = 6</text>
+          <line x1="268" x2="284" y1="38" y2="38" style="stroke:#CC79A7;stroke-width:1.8"/><text x="289" y="42"><tspan class="mi">K</tspan> = 8</text>
+          <line x1="330" x2="346" y1="38" y2="38" style="stroke:#0072B2;stroke-width:1.8"/><text x="351" y="42"><tspan class="mi">K</tspan> = 10</text>
+          </g>
+          <g class="f1b-cur"><line x1="0" x2="0" y1="24" y2="236"/><circle class="cp" r="4.5"/><circle class="cb" r="4.5"/></g>
+          <g class="f1b-read"><rect x="0" y="0" width="150" height="54" rx="6"/><text class="r1" x="10" y="17"></text><text class="r2" x="10" y="33"></text><text class="r3" x="10" y="48"></text></g>
+          </svg>
+      </div>
+      <div class="insight-b-text">
+        <p>The bank is bounded by <span class="mi">k</span><span class="mi">K</span>: it levels off at every <span class="mi">K</span> while the candidate pool keeps growing, from 36 to 1556 latents.</p>
+        <p>So the sequence the model reads stays short however long the span: going from <b>100 s to 400 s</b> adds only <b>12%</b> to the step time.</p>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section id="gallery">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="sota-title">Comparison with SOTA</h2>
+    </div>
+
+    <div class="carousel" data-kind="sota">
+    <div class="gnav">
+      <button class="prev" title="Previous example (&larr;)">&lsaquo; Prev</button>
+      <span class="count">1 / 1</span>
+      <button class="next" title="Next example (&rarr;)">Next &rsaquo;</button>
+    </div>
+    <div class="gallery-scroll">
+    <div class="gtable">
+    </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<section id="more" hidden>
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="sota-title">More Results</h2>
+    </div>
+    <p class="mlede">The 4-step model on more web photographs, 60 s each. Each camera path is planned from the photograph's depth so it stays in the free space it shows, and comes back to the first view within 30 s. Hover to play; click to open full size.</p>
+    <div class="mgrid"></div>
+  </div>
+</section>
+
+<section id="ablation">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="sota-title">Ablation Study</h2>
+    </div>
+    <div class="carousel" data-kind="ablu">
+      <div class="gnav">
+        <button class="prev" title="Previous example (&larr;)">&lsaquo; Prev</button>
+        <span class="count">1 / 1</span>
+        <button class="next" title="Next example (&rarr;)">Next &rsaquo;</button>
+      </div>
+      <div class="gallery-scroll">
+      <div class="gtable">
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+<script src="script.js?v=1790781138"></script>
+</body>
+</html>

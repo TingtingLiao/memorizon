@@ -1,0 +1,194 @@
+[
+{
+"id": "g26",
+"src": "assets/videos/gallery/g26.mp4",
+"poster": "assets/img/gallery/g26.jpg",
+"traj": "assets/traj/gallery/g26.json",
+"label": "Concept shop street",
+"style": "game"
+},
+{
+"id": "t09",
+"src": "assets/videos/teaser59/t09.mp4",
+"poster": "assets/img/teaser59/t09.jpg",
+"traj": "assets/traj/teaser59/t09.json",
+"label": "Grassy footpath",
+"style": "anime"
+},
+{
+"id": "t15",
+"src": "assets/videos/teaser59/t15.mp4",
+"poster": "assets/img/teaser59/t15.jpg",
+"traj": "assets/traj/teaser59/t15.json",
+"label": "Plum tree stone shore",
+"style": "ink"
+},
+{
+"id": "t06",
+"src": "assets/videos/teaser59/t06.mp4",
+"poster": "assets/img/teaser59/t06.jpg",
+"traj": "assets/traj/teaser59/t06.json",
+"label": "Oak tree avenue",
+"style": "game"
+},
+{
+"id": "g57",
+"src": "assets/videos/gallery/g57.mp4",
+"poster": "assets/img/gallery/g57.jpg",
+"traj": "assets/traj/gallery/g57.json",
+"label": "Wildflower path",
+"style": "oil"
+},
+{
+"id": "t05",
+"src": "assets/videos/teaser59/t05.mp4",
+"poster": "assets/img/teaser59/t05.jpg",
+"traj": "assets/traj/teaser59/t05.json",
+"label": "Rainy country road",
+"style": "oil"
+},
+{
+"id": "t17",
+"src": "assets/videos/teaser59/t17.mp4",
+"poster": "assets/img/teaser59/t17.jpg",
+"traj": "assets/traj/teaser59/t17.json",
+"label": "Red lantern canal town",
+"style": "photo"
+},
+{
+"id": "t14",
+"src": "assets/videos/teaser59/t14.mp4",
+"poster": "assets/img/teaser59/t14.jpg",
+"traj": "assets/traj/teaser59/t14.json",
+"label": "Nyc crosswalk avenue",
+"style": "photo"
+},
+{
+"id": "g30",
+"src": "assets/videos/gallery/g30.mp4",
+"poster": "assets/img/gallery/g30.jpg",
+"traj": "assets/traj/gallery/g30.json",
+"label": "Archway stone street",
+"style": "game"
+},
+{
+"id": "t10",
+"src": "assets/videos/teaser59/t10.mp4",
+"poster": "assets/img/teaser59/t10.jpg",
+"traj": "assets/traj/teaser59/t10.json",
+"label": "Cobbled oldtown street",
+"style": "photo"
+},
+{
+"id": "t04",
+"src": "assets/videos/teaser59/t04.mp4",
+"poster": "assets/img/teaser59/t04.jpg",
+"traj": "assets/traj/teaser59/t04.json",
+"label": "Misty forest lake",
+"style": "ink"
+},
+{
+"id": "t07",
+"src": "assets/videos/teaser59/t07.mp4",
+"poster": "assets/img/teaser59/t07.jpg",
+"traj": "assets/traj/teaser59/t07.json",
+"label": "Garden arch bridge",
+"style": "guofeng"
+},
+{
+"id": "g58",
+"src": "assets/videos/gallery/g58.mp4",
+"poster": "assets/img/gallery/g58.jpg",
+"traj": "assets/traj/gallery/g58.json",
+"label": "Harbour promenade",
+"style": "oil"
+},
+{
+"id": "g01",
+"src": "assets/videos/gallery/g01.mp4",
+"poster": "assets/img/gallery/g01.jpg",
+"traj": "assets/traj/gallery/g01.json",
+"label": "Sunset back alley",
+"style": "anime"
+},
+{
+"id": "g80",
+"src": "assets/videos/gallery/g80.mp4",
+"poster": "assets/img/gallery/g80.jpg",
+"traj": "assets/traj/gallery/g80.json",
+"label": "Stone stairs park",
+"style": "render"
+},
+{
+"id": "t02",
+"src": "assets/videos/teaser59/t02.mp4",
+"poster": "assets/img/teaser59/t02.jpg",
+"traj": "assets/traj/teaser59/t02.json",
+"label": "Snowy brick alley",
+"style": "render"
+},
+{
+"id": "g07",
+"src": "assets/videos/gallery/g07.mp4",
+"poster": "assets/img/gallery/g07.jpg",
+"traj": "assets/traj/gallery/g07.json",
+"label": "Seaside shop street",
+"style": "anime"
+},
+{
+"id": "t08",
+"src": "assets/videos/teaser59/t08.mp4",
+"poster": "assets/img/teaser59/t08.jpg",
+"traj": "assets/traj/teaser59/t08.json",
+"label": "Stylized town road",
+"style": "render"
+},
+{
+"id": "g08",
+"src": "assets/videos/gallery/g08.mp4",
+"poster": "assets/img/gallery/g08.jpg",
+"traj": "assets/traj/gallery/g08.json",
+"label": "Quiet residential lane",
+"style": "anime"
+},
+{
+"id": "g06",
+"src": "assets/videos/gallery/g06.mp4",
+"poster": "assets/img/gallery/g06.jpg",
+"traj": "assets/traj/gallery/g06.json",
+"label": "Cherry konbini night",
+"style": "anime"
+},
+{
+"id": "t11",
+"src": "assets/videos/teaser59/t11.mp4",
+"poster": "assets/img/teaser59/t11.jpg",
+"traj": "assets/traj/teaser59/t11.json",
+"label": "Red palace street",
+"style": "guofeng"
+},
+{
+"id": "t03",
+"src": "assets/videos/teaser59/t03.mp4",
+"poster": "assets/img/teaser59/t03.jpg",
+"traj": "assets/traj/teaser59/t03.json",
+"label": "Flower forest path",
+"style": "photo"
+},
+{
+"id": "g18",
+"src": "assets/videos/gallery/g18.mp4",
+"poster": "assets/img/gallery/g18.jpg",
+"traj": "assets/traj/gallery/g18.json",
+"label": "Moon gate hall",
+"style": "guofeng"
+},
+{
+"id": "t01",
+"src": "assets/videos/teaser59/t01.mp4",
+"poster": "assets/img/teaser59/t01.jpg",
+"traj": "assets/traj/teaser59/t01.json",
+"label": "Golden tree boulevard",
+"style": "oil"
+}
+]
