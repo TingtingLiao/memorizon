@@ -1,0 +1,11 @@
+torch>=2.6
+diffusers>=0.35
+transformers>=4.57,<5
+accelerate>=1.6
+einops
+omegaconf
+numpy
+pillow
+tqdm
+sentencepiece
+wandb

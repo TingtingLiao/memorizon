@@ -1,0 +1,54 @@
+# 4-step distillation of a trained Memorizon model (Self-Forcing + DMD).
+#   torchrun --nnodes 4 --nproc_per_node 8 ... -m memorizon.self_forcing configs/self_forcing_4step.yaml
+# Generate with the result: MemorizonPipeline(..., num_steps=4, guidance_scale=0).
+
+train_dtype: bfloat16
+
+model:
+  generator_path: path/to/memorizon-checkpoint     # teacher, critic and generator all start here
+  negative_embedding_path: data/negative_prompt_emb.pt
+  # python -c "import torch; from memorizon import NEGATIVE_PROMPT; from memorizon.text import TextEncoder; torch.save(TextEncoder()(NEGATIVE_PROMPT), 'data/negative_prompt_emb.pt')"
+  generator_timesteps: 4
+  scheduler_shift: 3.0
+  guidance_scale: 4.0          # teacher CFG, distilled into the generator
+  teacher_min_timestep: 20.0
+  teacher_max_timestep: 980.0
+  generator_update_frequency: 5
+  chunk: 4
+  topk_per_chunk: 6
+
+data:
+  dataset_path: data/shards
+  train_episodes: null
+  chunk: 4
+  n_query_chunks: 10
+  m_min: 9
+  m_max: 99
+  topk_per_chunk: 6
+  traj_scale: 4.0
+  prompt_dropout: 0.0
+
+trainer:
+  output_dir: runs/memorizon-100s-4step
+  max_steps: 1000
+  per_device_train_batch_size: 1
+  remove_unused_columns: false
+  learning_rate: 5.0e-7
+  fake_score_learning_rate: 4.0e-7
+  adam_beta1: 0.0
+  lr_scheduler_type: constant
+  max_grad_norm: 1.0
+  bf16: true
+  seed: 42
+  save_strategy: steps
+  save_steps: 200
+  logging_steps: 1
+  dataloader_num_workers: 2
+  report_to: [wandb]
+  fsdp: hybrid_shard auto_wrap
+  fsdp_config:
+    transformer_layer_cls_to_wrap: [MemorizonTransformer, MemorizonBlock]
+    transformer_layer_cls_to_checkpoint: [MemorizonBlock]
+    activation_checkpointing: true
+    use_orig_params: false
+    backward_prefetch: backward_pre

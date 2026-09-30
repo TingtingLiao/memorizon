@@ -1,0 +1,47 @@
+# Memorizon, 100 s spans: the released model.
+#   torchrun --nnodes 4 --nproc_per_node 8 ... -m memorizon.train configs/train_100s.yaml
+# Any key can be overridden on the command line, e.g. data.m_max=199 for 200 s spans.
+
+train_dtype: bfloat16
+camera_learning_rate: 1.0e-4      # the camera branch learns faster than the backbone
+
+model:
+  # from_pretrained: path/to/memorizon-checkpoint   # fine-tune an existing Memorizon model
+  base_model: Wan-AI/Wan2.2-TI2V-5B-Diffusers        # otherwise: Wan2.2 + a fresh camera branch
+  image_width: 864
+  image_height: 480
+  chunk_size: 4
+  train_backbone: true
+
+data:
+  dataset_path: data/shards                # see memorizon/data.py for the layout
+  train_episodes: null                     # optional json {"episodes": [...]} whitelist
+  chunk: 4
+  n_query_chunks: 10                       # 10 target chunks (10 s) per sample
+  m_min: 9                                 # span of m + 1 chunks: 10 s ...
+  m_max: 99                                # ... to 100 s
+  topk_per_chunk: 6                        # memory frames per chunk
+  traj_scale: 4.0                          # pose translations are metres / 4
+  prompt_dropout: 0.0                      # always train with the caption
+
+trainer:
+  output_dir: runs/memorizon-100s
+  max_steps: 10000
+  per_device_train_batch_size: 1
+  learning_rate: 2.0e-5
+  lr_scheduler_type: constant
+  warmup_ratio: 0.0
+  max_grad_norm: 1.0
+  bf16: true
+  seed: 42
+  save_strategy: steps
+  save_steps: 2000
+  logging_steps: 10
+  dataloader_num_workers: 2
+  report_to: [wandb]
+  fsdp: hybrid_shard auto_wrap
+  fsdp_config:
+    transformer_layer_cls_to_wrap: [MemorizonBlock]
+    activation_checkpointing: true
+    use_orig_params: true
+    backward_prefetch: backward_pre
