@@ -1,6 +1,6 @@
 (function () {
   "use strict";
-  const AV = "?v=20260930a";   // cache-buster for media replaced on 2026-09-29 (4-step results)
+  const AV = "?v=20260930b";   // cache-buster for media replaced on 2026-09-29 (4-step results)
 
   function rowOf(el) { return el.closest(".grow"); }
   function videosOf(row) { return [...row.querySelectorAll(".gcell video")]; }
@@ -1275,7 +1275,7 @@
   });
 
   const getJSON = (u) => fetch(u, { cache: "no-store" }).then((r) => (r.ok ? r.json() : Promise.reject(u)));
-  getJSON(`assets/videos/revisit/manifest.json${AV}f190`).then(revisitSection).catch(() => {});
+  getJSON(`assets/videos/revisit/manifest.json${AV}f160`).then(revisitSection).catch(() => {});
 
   // unseen-scene ablation: all eight Table 2 settings per example
   // dir = asset folder name, tp = trajectory file prefix
