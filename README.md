@@ -114,8 +114,10 @@ torchrun ... -m memorizon.self_forcing configs/self_forcing_4step.yaml \
 
 - **Data** — pre-encoded shards: Wan2.2 VAE latents, one camera pose per latent frame,
   first-frame encodes and umT5 caption embeddings. Layout: [`memorizon/data.py`](memorizon/data.py).
-- **Released model** — 10k steps on 32 H200 (batch 32), 95 h of walks in 50 Unreal Engine scenes.
 - **Longer spans** — set `data.m_max` (199 → 200 s, 399 → 400 s); same cost per step.
+- **Distillation** — the student is trained on its own rollouts, including the 0–20 s of
+  history before the ten target chunks, so the memory it retrieves is self-generated as at
+  inference (`model.self_history`).
 
 </details>
 

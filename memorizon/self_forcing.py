@@ -2,7 +2,10 @@
 
 The generator is trained on its own rollouts: each of a sample's ten target
 chunks is generated from the chunks it generated before (same layout, memory
-retrieval and camera conditioning as ``MemorizonPipeline``), then the generated
+retrieval and camera conditioning as ``MemorizonPipeline``). With ``self_history``
+the span before the targets (history and recent chunk, 0-20 s in the released
+config) is rolled out by the generator too, from the first frame alone, so the
+memory the targets retrieve is self-generated as at inference. Then the generated
 chunks are scored by a critic (``fake_score``) and by the teacher (``real_score``,
 with classifier-free guidance and the negative prompt). The difference of their
 denoised predictions is the DMD gradient. Generator, critic and teacher all start
@@ -44,7 +47,8 @@ class SelfForcingConfig(PretrainedConfig):
                  teacher_min_timestep: float = 20.0, teacher_max_timestep: float = 980.0,
                  guidance_scale: float = 4.0, generator_update_frequency: int = 5,
                  fake_score_loss_weighting: bool = True, dmd_normalization_eps: float = 1e-6,
-                 chunk: int = 4, topk_per_chunk: int = 6, traj_scale: float = 4.0, **kwargs):
+                 chunk: int = 4, topk_per_chunk: int = 6, traj_scale: float = 4.0,
+                 self_history: bool = False, **kwargs):
         super().__init__(**kwargs)
         self.generator_path = generator_path
         self.fake_score_path = fake_score_path or generator_path
@@ -61,6 +65,7 @@ class SelfForcingConfig(PretrainedConfig):
         self.chunk = chunk
         self.topk_per_chunk = topk_per_chunk
         self.traj_scale = traj_scale
+        self.self_history = self_history
 
 
 def _np(x: torch.Tensor) -> np.ndarray:
@@ -93,24 +98,88 @@ class SelfForcingModel(PreTrainedModel):
         return net.model(x, timesteps, text, rope_index=rope, attention_mask=mask,
                          camera=camera_transforms(net.model, c2w, intr))
 
+    def _gen_chunk(self, a_lat, a_c2w, pool_lat, pool_c2w, prev_lat, prev_c2w, q_c2w, text, intr,
+                   frustum, exit_step):
+        """One chunk as ``MemorizonPipeline`` makes it: top-k of the pool, the previous chunk,
+        ``exit_step + 1`` steps of the few-step schedule. Returns x0 and the inputs of the last step."""
+        C, dev, dt = self.config.chunk, a_lat.device, a_lat.dtype
+        ch, h, w = a_lat.shape[1], a_lat.shape[3], a_lat.shape[4]
+        if len(pool_c2w):
+            take = np.sort(topk(_np(q_c2w[-1]), _np(pool_c2w), frustum,
+                                min(self.config.topk_per_chunk, len(pool_c2w))))
+            take = torch.as_tensor(take, device=dev, dtype=torch.long)
+            mem_lat, mem_c2w = pool_lat[:, :, take], pool_c2w[take]
+        else:
+            mem_lat, mem_c2w = pool_lat[:, :, :0], pool_c2w[:0]
+
+        cond = torch.cat([a_lat, mem_lat, prev_lat], dim=2)
+        lay = Layout(n_bank=mem_lat.shape[2], n_recent=prev_lat.shape[2], chunk=C)
+        F, n_c = lay.total, lay.n_cond
+        seq_c2w = torch.cat([a_c2w, mem_c2w, prev_c2w, q_c2w])[None]
+        rope = torch.as_tensor(rope_index(lay), dtype=torch.long, device=dev)
+        mask = torch.as_tensor(attention_mask(lay), dtype=torch.bool, device=dev)
+
+        x = torch.randn((1, ch, C, h, w), device=dev, dtype=dt)
+        for s in range(exit_step + 1):
+            ts = torch.zeros((1, F), device=dev)
+            ts[:, n_c:] = float(self.gen_sched.timesteps[s])
+            flow = self._flow(self.generator, torch.cat([cond, x], dim=2), ts, text, mask, rope,
+                              seq_c2w, intr[:1])[:, :, n_c:]
+            if s == exit_step:
+                step = dict(cond=cond, x=x.clone(), t=ts[0, -1].item(), c2w=seq_c2w,
+                            rope=rope, mask=mask, F=F, n_c=n_c)
+                x = self.gen_sched.step_diff_noise_level(flow, ts[:, n_c:], x, to_final=True).to(dt)
+            else:
+                x = self.gen_sched.step_diff_noise_level(flow, ts[:, n_c:], x).to(dt)
+        return x, step
+
     @torch.no_grad()
-    def _rollout(self, lat, c2w, intr, text, n_cond, n_bank, exit_steps):
+    def _self_history(self, a_lat, a_c2w, pre_c2w, text, intr, frustum, n_sync):
+        """Roll the span before the targets (history + recent chunk) out from A alone, every chunk
+        with the full few-step schedule, as at inference. A rank with fewer chunks than ``n_sync``
+        (the most any rank has this step) runs throwaway forwards, so all ranks run as many."""
+        C, last = self.config.chunk, self.config.generator_timesteps - 1
+        empty_lat, empty_c2w = a_lat[:, :, :0], a_c2w[:0]
+        gen = []
+        for g in range(pre_c2w.shape[0] // C):
+            pool = gen[:max(g - 1, 0)]
+            x, _ = self._gen_chunk(
+                a_lat, a_c2w, torch.cat([empty_lat] + pool, dim=2), pre_c2w[:len(pool) * C],
+                gen[g - 1] if g else empty_lat, pre_c2w[(g - 1) * C:g * C] if g else empty_c2w,
+                pre_c2w[g * C:(g + 1) * C], text, intr, frustum, last)
+            gen.append(x)
+        for _ in range(n_sync - len(gen)):
+            self._gen_chunk(a_lat, a_c2w, empty_lat, empty_c2w, empty_lat, empty_c2w,
+                            a_c2w.expand(C, 4, 4), text, intr, frustum, last)
+        return torch.cat([empty_lat] + gen, dim=2)
+
+    @torch.no_grad()
+    def _rollout(self, lat, c2w, intr, text, n_cond, n_bank, exit_steps, pre=None):
         """Generate every target chunk from the chunks generated before it (no grad).
 
         Chunk ``j`` stops after ``exit_steps[j] + 1`` of the few-step schedule. Returns
-        the generated chunks and, per chunk, the inputs of its last step.
+        the generated chunks and, per chunk, the inputs of its last step. With ``pre``
+        (``self_history``) the bank and the recent chunk are not the sample's but the
+        generator's own rollout of the span before the targets.
         """
-        C, dev, dt = self.config.chunk, lat.device, lat.dtype
-        ch, h, w = lat.shape[1], lat.shape[3], lat.shape[4]
+        C = self.config.chunk
         cams = c2w[0]
-        bank_lat, bank_c2w = lat[:, :, 1:1 + n_bank], cams[1:1 + n_bank]
-        rec_lat, rec_c2w = lat[:, :, 1 + n_bank:n_cond], cams[1 + n_bank:n_cond]
+        a_lat, a_c2w = lat[:, :, :1], cams[:1]
         frustum = Frustum.from_intrinsics(intr[0].tolist(), self.config.traj_scale)
+        if pre is not None:
+            pre_c2w, n_sync = pre
+            hist = self._self_history(a_lat, a_c2w, pre_c2w, text, intr, frustum, n_sync)
+            n_rec = C if hist.shape[2] else 0
+            bank_lat, bank_c2w = hist[:, :, :hist.shape[2] - n_rec], pre_c2w[:hist.shape[2] - n_rec]
+            rec_lat, rec_c2w = hist[:, :, hist.shape[2] - n_rec:], pre_c2w[hist.shape[2] - n_rec:]
+        else:
+            bank_lat, bank_c2w = lat[:, :, 1:1 + n_bank], cams[1:1 + n_bank]
+            rec_lat, rec_c2w = lat[:, :, 1 + n_bank:n_cond], cams[1 + n_bank:n_cond]
         gen, steps = [], []
         for j in range((lat.shape[2] - n_cond) // C):
             q_c2w = cams[n_cond + j * C:n_cond + (j + 1) * C]
-            # memory pool: the sample's bank, the real recent chunk (from j = 1), and
-            # the chunks generated before j - 1 (chunk j - 1 is the new recent chunk)
+            # memory pool: the bank, the recent chunk (from j = 1), and the chunks
+            # generated before j - 1 (chunk j - 1 is the new recent chunk)
             pool_lat, pool_c2w = [bank_lat], [bank_c2w]
             if j >= 1 and rec_lat.shape[2]:
                 pool_lat.append(rec_lat)
@@ -118,37 +187,12 @@ class SelfForcingModel(PreTrainedModel):
             for t in range(j - 1):
                 pool_lat.append(gen[t])
                 pool_c2w.append(cams[n_cond + t * C:n_cond + (t + 1) * C])
-            pool_lat, pool_c2w = torch.cat(pool_lat, dim=2), torch.cat(pool_c2w)
-            if len(pool_c2w):
-                take = np.sort(topk(_np(q_c2w[-1]), _np(pool_c2w), frustum,
-                                    min(self.config.topk_per_chunk, len(pool_c2w))))
-                take = torch.as_tensor(take, device=dev, dtype=torch.long)
-                mem_lat, mem_c2w = pool_lat[:, :, take], pool_c2w[take]
-            else:
-                mem_lat, mem_c2w = pool_lat[:, :, :0], pool_c2w[:0]
             prev_lat = rec_lat if j == 0 else gen[j - 1]
             prev_c2w = rec_c2w if j == 0 else cams[n_cond + (j - 1) * C:n_cond + j * C]
-
-            cond = torch.cat([lat[:, :, :1], mem_lat, prev_lat], dim=2)
-            lay = Layout(n_bank=mem_lat.shape[2], n_recent=prev_lat.shape[2], chunk=C)
-            F, n_c = lay.total, lay.n_cond
-            seq_c2w = torch.cat([cams[:1], mem_c2w, prev_c2w, q_c2w])[None]
-            rope = torch.as_tensor(rope_index(lay), dtype=torch.long, device=dev)
-            mask = torch.as_tensor(attention_mask(lay), dtype=torch.bool, device=dev)
-
-            x = torch.randn((1, ch, C, h, w), device=dev, dtype=dt)
-            for s in range(exit_steps[j] + 1):
-                ts = torch.zeros((1, F), device=dev)
-                ts[:, n_c:] = float(self.gen_sched.timesteps[s])
-                flow = self._flow(self.generator, torch.cat([cond, x], dim=2), ts, text, mask, rope,
-                                  seq_c2w, intr[:1])[:, :, n_c:]
-                if s == exit_steps[j]:
-                    steps.append(dict(cond=cond, x=x.clone(), t=ts[0, -1].item(), c2w=seq_c2w,
-                                      rope=rope, mask=mask, F=F, n_c=n_c))
-                    x = self.gen_sched.step_diff_noise_level(flow, ts[:, n_c:], x, to_final=True).to(dt)
-                else:
-                    x = self.gen_sched.step_diff_noise_level(flow, ts[:, n_c:], x).to(dt)
+            x, step = self._gen_chunk(a_lat, a_c2w, torch.cat(pool_lat, dim=2), torch.cat(pool_c2w),
+                                      prev_lat, prev_c2w, q_c2w, text, intr, frustum, exit_steps[j])
             gen.append(x)
+            steps.append(step)
         return torch.cat(gen, dim=2), steps
 
     def _generator_x0(self, steps, text, intr):
@@ -187,7 +231,7 @@ class SelfForcingModel(PreTrainedModel):
         return self._flow(net, x, ts, text, ctx["mask"], ctx["rope"], ctx["c2w"], ctx["intr"])[:, :, n:]
 
     def forward(self, latents, c2w, intrinsics, text_embedding, attention_mask, rope_index,
-                n_cond, n_bank, should_update_generator: bool = True, **_):
+                n_cond, n_bank, pre_c2w=None, should_update_generator: bool = True, **_):
         cfg, dev, dt = self.config, latents.device, torch.bfloat16
         lat, c2w, intr = latents.to(dt), c2w.to(dev, torch.float32), intrinsics.to(dev, torch.float32)
         text = text_embedding.to(dev, dt)
@@ -200,7 +244,16 @@ class SelfForcingModel(PreTrainedModel):
         exit_steps = torch.randint(cfg.generator_timesteps, (n_chunks,), device=dev)
         if torch.distributed.is_initialized():
             torch.distributed.broadcast(exit_steps, src=0)
-        x0, steps = self._rollout(lat, c2w, intr, text, n, int(n_bank[0]), exit_steps.tolist())
+        pre = None
+        if cfg.self_history:                       # history and recent chunk generated, not GT
+            if pre_c2w is None:
+                raise ValueError("model.self_history needs data.return_pre_c2w=true")
+            pre_c2w = pre_c2w[0].to(dev, torch.float32)
+            n_sync = torch.tensor(pre_c2w.shape[0] // cfg.chunk, device=dev)
+            if torch.distributed.is_initialized():
+                torch.distributed.all_reduce(n_sync, op=torch.distributed.ReduceOp.MAX)
+            pre = (pre_c2w, int(n_sync))
+        x0, steps = self._rollout(lat, c2w, intr, text, n, int(n_bank[0]), exit_steps.tolist(), pre)
 
         with torch.no_grad():
             t = self._noise_level_per_chunk(n_chunks, dev)

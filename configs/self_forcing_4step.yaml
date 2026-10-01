@@ -16,6 +16,7 @@ model:
   generator_update_frequency: 5
   chunk: 4
   topk_per_chunk: 6
+  self_history: true           # roll the history out with the generator (needs data.return_pre_c2w)
 
 data:
   dataset_path: data/shards
@@ -23,8 +24,9 @@ data:
   chunk: 4
   n_query_chunks: 10
   m_min: 9
-  m_max: 99
+  m_max: 29                    # spans of 10-30 s: up to 20 s of self-generated history before the targets
   topk_per_chunk: 6
+  return_pre_c2w: true
   traj_scale: 4.0
   prompt_dropout: 0.0
 

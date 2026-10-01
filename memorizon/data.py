@@ -44,7 +44,8 @@ class LongSpanDataset(torch.utils.data.Dataset):
                  chunk: int = 4, n_query_chunks: int = 10, m_min: int = 9, m_max: int = 99,
                  topk_per_chunk: int = 6, max_bank: int = 60, traj_scale: float = 4.0,
                  prompt_dropout: float = 0.0, null_prompt_path: str | None = None,
-                 text_max_len: int = 512, dtype: torch.dtype | str | None = torch.bfloat16):
+                 text_max_len: int = 512, return_pre_c2w: bool = False,
+                 dtype: torch.dtype | str | None = torch.bfloat16):
         self.root = dataset_path
         with open(os.path.join(dataset_path, "index.json")) as f:
             index = json.load(f)
@@ -68,6 +69,7 @@ class LongSpanDataset(torch.utils.data.Dataset):
         self.m_min, self.m_max = m_min, m_max
         self.topk, self.max_bank = topk_per_chunk, max_bank
         self.traj_scale = traj_scale
+        self.return_pre_c2w = return_pre_c2w
         self.prompt_dropout, self.text_max_len = prompt_dropout, text_max_len
         self.dtype = getattr(torch, dtype) if isinstance(dtype, str) else dtype
         self.null_prompt = None
@@ -141,10 +143,11 @@ class LongSpanDataset(torch.utils.data.Dataset):
         latents[:, 0] = torch.as_tensor(cond["cond_latents"][:, ci], dtype=self.dtype)
         # cameras relative to the first target frame
         c2w = c2w_ep[idx].clone()
-        c2w = invert_se3(c2w[lay.n_cond:lay.n_cond + 1]) @ c2w
+        anchor = invert_se3(c2w[lay.n_cond:lay.n_cond + 1])
+        c2w = anchor @ c2w
         c2w_np = c2w.numpy().astype(np.float64)
 
-        return {
+        out = {
             "latents": latents,
             "c2w": c2w,
             "intrinsics": intr,
@@ -157,6 +160,11 @@ class LongSpanDataset(torch.utils.data.Dataset):
             "n_bank": torch.tensor(lay.n_bank, dtype=torch.long),
             "n_recent": torch.tensor(lay.n_recent, dtype=torch.long),
         }
+        if self.return_pre_c2w:
+            # cameras of every latent between A and the first target (history + recent), for
+            # Self-Forcing with self-generated history (memorizon.self_forcing, self_history)
+            out["pre_c2w"] = anchor @ c2w_ep[a + 1:q0]
+        return out
 
     def _caption(self, ep: str, ci: int, rng: random.Random) -> torch.Tensor:
         """Caption embedding of the cond position ``ci``, zero-padded to ``text_max_len``."""
