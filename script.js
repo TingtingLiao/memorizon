@@ -1,6 +1,6 @@
 (function () {
   "use strict";
-  const AV = "?v=20261001a";   // cache-buster for media replaced on 2026-10-01 (selfhist 4-step results)
+  const AV = "?v=20261001b";   // cache-buster for media replaced on 2026-10-01 (selfhist 4-step results)
 
   function rowOf(el) { return el.closest(".grow"); }
   function videosOf(row) { return [...row.querySelectorAll(".gcell video")]; }
