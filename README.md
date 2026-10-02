@@ -12,7 +12,7 @@
 </p>
 
 <div align="center">
-  <a href=''><img src='https://img.shields.io/badge/arXiv-coming%20soon-red?logo=arxiv&logoColor=darkred&labelColor=white'></a>  &ensp;
+  <a href='https://arxiv.org/abs/2610.00544'><img src='https://img.shields.io/badge/arXiv-2610.00544-red?logo=arxiv&logoColor=darkred&labelColor=white'></a>  &ensp;
   <a href='https://tingtingliao.github.io/memorizon/'><img src='https://img.shields.io/badge/project-page-green?logo=googlechrome&logoColor=green&labelColor=white'></a>  &ensp;
   <a href='https://huggingface.co/Luffuly/memorizon'><img src='https://img.shields.io/badge/HuggingFace-model-yellow?logo=huggingface&logoColor=yellow&labelColor=white'></a>  &ensp;
   <a href='LICENSE'><img src='https://img.shields.io/badge/license-Apache--2.0-blue?logo=C&logoColor=blue&labelColor=white'></a>  &ensp;
@@ -127,7 +127,7 @@ torchrun ... -m memorizon.self_forcing configs/self_forcing_4step.yaml \
 @article{memorizon2026,
   title   = {Memorizon: Training World Models Beyond Their Context Window},
   author  = {Tingting Liao, Xuezhi Liang, Hao Li, Guangyi Liu},
-  year    = {2026},
-  note    = {arXiv preprint}
+  journal = {arXiv preprint arXiv:2610.00544},
+  year    = {2026}
 }
 ```
