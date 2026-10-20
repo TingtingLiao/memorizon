@@ -20,7 +20,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from memorizon import DEFAULT_INTRINSICS, NEGATIVE_PROMPT, MemorizonPipeline, actions_to_c2w, save_video
+from memorizon import NEGATIVE_PROMPT, MemorizonPipeline, actions_to_c2w, save_video
 
 
 def main():
@@ -38,8 +38,8 @@ def main():
     ap.add_argument("--steps", type=int, default=None, help="denoising steps per chunk (default: the checkpoint's)")
     ap.add_argument("--guidance", type=float, default=None, help="CFG scale (default: the checkpoint's)")
     ap.add_argument("--memory", type=int, default=6, help="memory frames retrieved per chunk")
-    ap.add_argument("--intrinsics", type=float, nargs=4, default=DEFAULT_INTRINSICS,
-                    metavar=("FX", "FY", "CX", "CY"), help="pixels of the 864x480 frame")
+    ap.add_argument("--intrinsics", type=float, nargs=4, default=None, metavar=("FX", "FY", "CX", "CY"),
+                    help="pixels of the output frame (default: the checkpoint's)")
     ap.add_argument("--seed", type=int, default=0)
     a = ap.parse_args()
 

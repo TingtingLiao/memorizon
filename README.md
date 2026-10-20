@@ -26,6 +26,10 @@
 
 ---
 
+## 📢 News
+
+- **2026-10-20** — Released [`Luffuly/memorizon-1280x704-50step`](https://huggingface.co/Luffuly/memorizon-1280x704-50step), a checkpoint at Wan2.2-TI2V-5B's native **1280×704** resolution (50 steps, CFG 4).
+
 ## 🔧 Installation
 
 ```bash
@@ -38,7 +42,14 @@ pip install -e .
 
 ## 🚀 Quick Start
 
-One image + a camera path → a long video. Drive the camera with a **pose trajectory** or **keyboard actions**:
+One image + a camera path → a long video. Drive the camera with a **pose trajectory** or **keyboard actions**.
+
+| Checkpoint | Resolution | Sampling (default) |
+|:---|:---:|:---|
+| [`Luffuly/memorizon`](https://huggingface.co/Luffuly/memorizon) | 864×480 | 4 steps, no CFG (distilled) |
+| [`Luffuly/memorizon-1280x704-50step`](https://huggingface.co/Luffuly/memorizon-1280x704-50step) | 1280×704 | 50 steps, CFG 4 |
+
+Resolution, camera intrinsics and sampling settings are read from the checkpoint; pass `--checkpoint` to choose one.
 
 ```bash
 # recorded trajectory: the example of the project page's comparison (60 s)
@@ -55,7 +66,7 @@ from memorizon import MemorizonPipeline, actions_to_c2w, save_video
 
 pipe = MemorizonPipeline.from_pretrained("Luffuly/memorizon")
 video = pipe("photo.jpg", actions_to_c2w("w*16 l*24 w*16 l*24"))
-save_video(video, "out.mp4")                     # 864x480, 16 fps
+save_video(video, "out.mp4")                     # 16 fps, at the checkpoint's resolution
 ```
 
 ### 🎮 Keyboard actions

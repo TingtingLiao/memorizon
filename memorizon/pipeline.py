@@ -25,7 +25,8 @@ NEGATIVE_PROMPT = (
     "misshapen limbs, fused fingers, still picture, messy background, three legs, many people "
     "in the background, walking backwards")
 
-# Intrinsics (fx, fy, cx, cy) of the 864x480 training frames (90 degree horizontal FOV).
+# Intrinsics (fx, fy, cx, cy) of the 864x480 training frames (90 degree horizontal FOV). A checkpoint
+# trained at another resolution stores its own in ``config.intrinsics``.
 DEFAULT_INTRINSICS = (432.0, 426.66666, 432.0, 240.0)
 
 
@@ -176,7 +177,7 @@ class MemorizonPipeline:
             gen[:, :, q_lo:q_hi] = x[0:1, :, n_cond:]
         return gen
 
-    def __call__(self, image, c2w: np.ndarray, prompt: str | None = None, intrinsics=DEFAULT_INTRINSICS,
+    def __call__(self, image, c2w: np.ndarray, prompt: str | None = None, intrinsics=None,
                  num_chunks: int | None = None, negative_prompt: str = NEGATIVE_PROMPT,
                  guidance_scale: float | None = None, num_steps: int | None = None,
                  memory_size: int = 6, seed: int = 0, progress: bool = True) -> np.ndarray:
@@ -186,6 +187,7 @@ class MemorizonPipeline:
         captioned with the training captioner (``memorizon.caption``).
         ``num_steps`` / ``guidance_scale`` default to the checkpoint's own settings
         (20 steps with CFG 4 for the base model, 4 steps without CFG when distilled).
+        ``intrinsics`` (fx, fy, cx, cy) are pixels of the output frame; default: the checkpoint's.
         """
         if prompt is None:
             prompt = caption(image, device=str(self.device))
@@ -195,6 +197,8 @@ class MemorizonPipeline:
         num_steps = num_steps or getattr(cfg, "default_num_steps", 20)
         if guidance_scale is None:
             guidance_scale = getattr(cfg, "default_guidance_scale", 4.0)
+        if intrinsics is None:
+            intrinsics = getattr(cfg, "intrinsics", None) or DEFAULT_INTRINSICS
         C = cfg.chunk_size
         if num_chunks is None:
             num_chunks = (len(c2w) - 1) // C
