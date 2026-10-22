@@ -14,7 +14,7 @@
 <div align="center">
   <a href='https://arxiv.org/abs/2610.00544'><img src='https://img.shields.io/badge/arXiv-2610.00544-red?logo=arxiv&logoColor=darkred&labelColor=white'></a>  &ensp;
   <a href='https://tingtingliao.github.io/memorizon/'><img src='https://img.shields.io/badge/project-page-green?logo=googlechrome&logoColor=green&labelColor=white'></a>  &ensp;
-  <a href='https://huggingface.co/Luffuly/memorizon'><img src='https://img.shields.io/badge/HuggingFace-model-yellow?logo=huggingface&logoColor=yellow&labelColor=white'></a>  &ensp;
+  <a href='https://huggingface.co/Luffuly/memorizon-1280x704-4step'><img src='https://img.shields.io/badge/HuggingFace-model-yellow?logo=huggingface&logoColor=yellow&labelColor=white'></a>  &ensp;
   <a href='LICENSE'><img src='https://img.shields.io/badge/license-Apache--2.0-blue?logo=C&logoColor=blue&labelColor=white'></a>  &ensp;
 </div>
 
@@ -28,6 +28,7 @@
 
 ## 📢 News
 
+- **2026-10-22** — Released [`Luffuly/memorizon-1280x704-4step`](https://huggingface.co/Luffuly/memorizon-1280x704-4step), the 4-step distilled model at **1280×704**; it replaces the 864×480 4-step checkpoint.
 - **2026-10-20** — Released [`Luffuly/memorizon-1280x704-50step`](https://huggingface.co/Luffuly/memorizon-1280x704-50step), a checkpoint at Wan2.2-TI2V-5B's native **1280×704** resolution (50 steps, CFG 4).
 
 ## 🔧 Installation
@@ -46,25 +47,25 @@ One image + a camera path → a long video. Drive the camera with a **pose traje
 
 | Checkpoint | Resolution | Sampling (default) |
 |:---|:---:|:---|
-| [`Luffuly/memorizon`](https://huggingface.co/Luffuly/memorizon) | 864×480 | 4 steps, no CFG (distilled) |
+| [`Luffuly/memorizon-1280x704-4step`](https://huggingface.co/Luffuly/memorizon-1280x704-4step) | 1280×704 | 4 steps, no CFG (distilled) |
 | [`Luffuly/memorizon-1280x704-50step`](https://huggingface.co/Luffuly/memorizon-1280x704-50step) | 1280×704 | 50 steps, CFG 4 |
 
 Resolution, camera intrinsics and sampling settings are read from the checkpoint; pass `--checkpoint` to choose one.
 
 ```bash
 # recorded trajectory: the example of the project page's comparison (60 s)
-python scripts/generate.py --checkpoint Luffuly/memorizon --image assets/examples/residential_road.jpg \
+python scripts/generate.py --checkpoint Luffuly/memorizon-1280x704-4step --image assets/examples/residential_road.jpg \
     --trajectory assets/examples/residential_road_60s.npy --output out.mp4
 
 # keyboard actions (one per 0.25 s)
-python scripts/generate.py --checkpoint Luffuly/memorizon --image photo.jpg \
+python scripts/generate.py --checkpoint Luffuly/memorizon-1280x704-4step --image photo.jpg \
     --actions "w*16 l*24 w*16 l*24" --output out.mp4
 ```
 
 ```python
 from memorizon import MemorizonPipeline, actions_to_c2w, save_video
 
-pipe = MemorizonPipeline.from_pretrained("Luffuly/memorizon")
+pipe = MemorizonPipeline.from_pretrained("Luffuly/memorizon-1280x704-4step")
 video = pipe("photo.jpg", actions_to_c2w("w*16 l*24 w*16 l*24"))
 save_video(video, "out.mp4")                     # 16 fps, at the checkpoint's resolution
 ```
